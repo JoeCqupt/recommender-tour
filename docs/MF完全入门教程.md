@@ -387,6 +387,180 @@ MF 的弱点来自它的**目标函数**:
 
 ---
 
+---
+
+## 14. 附录:手写 MF 训练循环的六个灵魂问题
+
+读完前面章节,你应该已经理解"MF 是什么"。但第一次看 `MatrixFactorization.java` 的训练循环时,通常还会被几个细节卡住。这里把最常见的问题汇总,用大白话+具体数字回答。
+
+### Q1:为什么 `Random rnd = new Random(42)`?42 有特殊含义吗?
+
+**没有特殊含义,它只是一个"随机种子"**。换成 `0`、`1`、`2024` 都行。
+
+作用:**让每次运行得到完全一样的随机数序列**。这样隐向量初始化、`shuffle` 顺序都固定,实验结果可复现。调参时必须固定种子,否则你分不清指标变化是参数带来的,还是随机波动带来的。
+
+上线前可以改成 `new Random()`(用当前时间当种子),但每次结果会略有不同。
+
+---
+
+### Q2:`INIT_STD = 0.01` 是怎么定的?为什么不能是 0 或 1?
+
+`INIT_STD` 是隐向量初始值的"抖动幅度"。代码里:
+
+```java
+p[u][f] = rnd.nextGaussian() * INIT_STD;
+```
+
+生成的是均值为 0、标准差为 0.01 的随机数,大部分落在 `[-0.01, +0.01]` 之间。
+
+| 取值 | 后果 |
+|---|---|
+| `INIT_STD = 0` | 所有隐向量都是 0,`p·q = 0`,梯度永远为 0,模型 stuck。这叫**对称性无法打破**。 |
+| `INIT_STD = 1.0` | 初始值太大,`dot(p,q)` 可能几十,预测分 `pred = 3.5 + 50 = 53.5`,误差爆炸,训练直接飞掉。 |
+| `INIT_STD = 0.01` | 够小,初始预测接近 `mu`;不为 0,能打破对称。是社区默认的稳妥经验值。 |
+
+---
+
+### Q3:`lr`、`reg` 为什么取 0.01、0.02?
+
+这两个都是**经验超参**,没有唯一正确答案。
+
+- **`lr`(学习率)**:每次沿梯度走的步长。对 MovieLens 这种评分 0.5~5.0 的数据,误差 `e` 通常在 -2~+2 之间,乘以 0.01 后每次更新 0.0x 级别,属于"小碎步稳步下山"。
+- **`reg`(正则强度)**:把参数往 0 拉的力。0.02 是"轻轻拉住",既防止参数爆炸,又不至于把隐向量压平。
+
+阶段一文档 §5.2 有具体对照:
+
+| reg | RMSE | HR@10 |
+|---|---|---|
+| 0.00 | 0.9896 | 0.0197 |
+| 0.02 | 0.9664 | 0.0197 |
+| 0.05 | 0.9556 | 0.0082 |
+| 0.10 | 0.9567 | 0.0000 |
+
+`reg` 越大,参数越被压向 0,模型越保守,RMSE 可能更好看,但排序能力被压没了。
+
+---
+
+### Q4:训练循环到底在干什么?一行行拆一下
+
+```java
+for (int epoch = 0; epoch < epochs; epoch++) {
+    Collections.shuffle(data, rnd);           // ① 每轮打乱顺序
+    for (Rating r : data) {                   // ② 一次只看一条评分
+        int u = userIdx.get(r.userId());
+        int i = itemIdx.get(r.movieId());
+        double pred = mu + bU[u] + bI[i] + dot(p[u], q[i]);  // ③ 算预测
+        double e = r.rating() - pred;         // ④ 算误差
+        bU[u] += lr * (e - reg * bU[u]);      // ⑤ 更新偏置
+        bI[i] += lr * (e - reg * bI[i]);
+        double[] pu = p[u];
+        double[] qi = q[i];
+        for (int f = 0; f < k; f++) {
+            double puf = pu[f];               // ⑥ 先存旧值!
+            double qif = qi[f];
+            pu[f] += lr * (e * qif - reg * puf);  // ⑦ 更新 p
+            qi[f] += lr * (e * puf - reg * qif);  // ⑧ 更新 q
+        }
+    }
+}
+```
+
+- ① `shuffle`:避免数据顺序引入偏差;
+- ② 一次一条:SGD 的 "Stochastic",看完一条就更新;
+- ③④ 算预测和误差 `e = 真实分 - 预测分`;
+- ⑤ 偏置更新:`e` 推它往拟合方向走,`-reg*bU` 把它往 0 拉;
+- ⑥ 存旧值:防止 `p` 更新后影响 `q` 的梯度,这是手写 MF 最经典的 bug;
+- ⑦⑧ 隐向量更新:沿着对方向量的方向走,让点积变大/变小。
+
+---
+
+### Q5:更新公式里为什么 `pu[f]` 要乘 `qif`?
+
+因为我们要改变 `p·q`:
+
+```text
+p · q = p[0]*q[0] + p[1]*q[1] + ... + p[k]*q[k]
+```
+
+如果让 `p[0]` 增加 `Δ`,内积会增加 `Δ * q[0]`。所以**让 `p[0]` 沿着 `q[0]` 的方向走,内积增加最快**。
+
+公式上:
+
+```text
+p_new = p + α * q     (α 是小正数)
+```
+
+对应分量就是:
+
+```text
+p[f] += α * q[f]
+```
+
+代码里 `α = lr * e`:
+
+- `e > 0`:预测偏低,要增大内积,`p` 向 `q` 靠近;
+- `e < 0`:预测偏高,要减小内积,`p` 向 `q` 反方向移动。
+
+---
+
+### Q6:为什么内积变大 = 夹角变小?
+
+内积公式:
+
+```text
+p · q = |p| × |q| × cos(θ)
+```
+
+假设长度不变,只看 `cos(θ)`:
+
+| 夹角 θ | cos(θ) |
+|---|---|
+| 0°(同向) | 1.0(最大) |
+| 45° | 0.707 |
+| 90°(垂直) | 0 |
+| 180°(反向) | -1.0(最小) |
+
+夹角越小,`cos(θ)` 越大,内积越大。
+
+具体例子:
+
+```text
+p = (1, 0), q = (0, 1)    夹角 90°, p·q = 0
+
+把 p 往 q 方向推一点:
+p_new = (1, 0.1)          夹角变小, p_new·q = 0.1
+
+再推近一点:
+p_new = (0.2, 1.0)        夹角更小, p_new·q = 1.0
+```
+
+所以 SGD 让 `p` 沿着 `q` 的方向走,本质就是让它们的夹角变小,从而让内积变大。
+
+---
+
+## 15. 关键代码索引(更新)
+
+| 想看什么 | 文件:行号 |
+|---|---|
+| 预测公式 | `src/main/java/tour/recsys/model/MatrixFactorization.java:94` |
+| SGD 训练主循环 | `src/main/java/tour/recsys/model/MatrixFactorization.java:88-107` |
+| 隐向量初始化 | `src/main/java/tour/recsys/model/MatrixFactorization.java:73-83` |
+| k=2 可视化导出 | `src/main/java/tour/recsys/demo/MfVisualizer.java` |
+| 画图脚本 | `scripts/plot_mf_2d.py` |
+| MF 与 ItemCF 对比评估 | `src/main/java/tour/recsys/Main.java` |
+| BPR-MF 成对排序 | `src/main/java/tour/recsys/model/BprMF.java` |
+
+---
+
+## 16. 参考
+
+- Koren, Bell, Volinsky. "Matrix Factorization Techniques for Recommender Systems", IEEE Computer, 2009. https://ieeexplore.ieee.org/document/5197422
+- Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback", UAI 2009. https://arxiv.org/abs/1205.2618
+- 王喆.《深度学习推荐系统》
+- 项亮.《推荐系统实践》
+
+---
+
 **最后的自测题**:
 
 1. 如果我把 `k` 从 2 调到 100,`P` 和 `Q` 矩阵的形状怎么变?训练时间怎么变?
@@ -394,3 +568,5 @@ MF 的弱点来自它的**目标函数**:
 3. 为什么 MF 的 `recommend` 是 O(物品数×k),而 ItemCF 与物品总数无关?这对线上架构有什么启示?
 4. 从本文图上看,动作片和喜剧片大致分布在哪个区域?这说明模型学到了什么?
 5. 为什么 MF 的 RMSE 能从 1.13 降到 0.97,但 HR@10 只有 2%?这两个指标分别考核什么能力?
+6. 如果把 `INIT_STD` 从 0.01 改成 0,训练会卡住,为什么?
+7. 更新 `pu[f]` 时,为什么要先存旧值 `puf`?如果不存直接用 `pu[f]` 更新会怎样?
