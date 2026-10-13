@@ -5,19 +5,20 @@ import tour.recsys.data.Dataset;
 import tour.recsys.data.Rating;
 import tour.recsys.data.TrainTestSplitter;
 import tour.recsys.eval.Evaluation;
-import tour.recsys.eval.Metrics;
+import tour.recsys.model.BprMF;
 import tour.recsys.model.ItemCF;
-import tour.recsys.model.MatrixFactorization;
 import tour.recsys.model.PopularRecommender;
 import tour.recsys.model.Recommender;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * 阶段一主入口:加载 MovieLens -> leave-one-out 切分 -> 训练三个模型 -> 离线评估对比。
+ * 阶段二主入口:隐式反馈 + BPR-MF。
+ *
+ * <p>切分从 leave-one-out 改为按时间比例切分(训练 80%,测试 20%),每个用户有多个测试物品,
+ * 更适合评估排序模型。对比 Popular、ItemCF、评分 MF、BPR-MF。
  *
  * <p>用法: java -cp target/classes tour.recsys.Main [dataDir] [topN]
  */
@@ -31,55 +32,67 @@ public final class Main {
                 CsvLoader.loadRatings(dataDir + "/ratings.csv"),
                 CsvLoader.loadMovies(dataDir + "/movies.csv"));
 
-        System.out.printf("数据集: %d 用户, %d 物品, %d 评分, 全局均值 %.3f%n",
-                all.userCount(), all.itemCount(), all.ratingCount(), all.globalMean());
+        // 阶段二:把显式评分转成隐式反馈 —— 只有 >=4.0 才算"喜欢"
+        Dataset implicit = all.filterRatings(4.0);
 
-        TrainTestSplitter.Split split = TrainTestSplitter.leaveOneOut(all, 5);
+        System.out.printf("原始评分: %d 用户, %d 物品, %d 条评分%n",
+                all.userCount(), all.itemCount(), all.ratingCount());
+        System.out.printf("隐式正样本(>=4.0): %d 用户, %d 物品, %d 条交互%n",
+                implicit.userCount(), implicit.itemCount(), implicit.ratingCount());
+
+        // 按时间比例切分:每用户前 80% 训练,后 20% 测试
+        TrainTestSplitter.Split split = TrainTestSplitter.timeSplit(implicit, 0.2, 5);
         Dataset train = split.train();
-        Map<Long, Rating> test = split.testByUser();
-        System.out.printf("切分(leave-one-out, 每用户交互>=5): 训练 %d 条, 测试 %d 用户%n%n",
-                train.ratingCount(), test.size());
+        Map<Long, List<Rating>> test = split.testByUser();
+        int testItems = test.values().stream().mapToInt(List::size).sum();
+        System.out.printf("切分(time-split, 每用户交互>=5, 测试比例 20%%): 训练 %d 条, 测试 %d 用户 / %d 条%n%n",
+                train.ratingCount(), test.size(), testItems);
 
         // 1) 热门 baseline
         Recommender popular = new PopularRecommender(train);
 
-        // 2) ItemCF:topK 邻居 = 50,热门惩罚 alpha = 0(见 README:把 alpha 调到 >0 反而会摧毁召回)
+        // 2) ItemCF
         Recommender itemCF = new ItemCF(train, 50, 0.0);
 
-        // 3) 带偏置矩阵分解(k=100, epochs=50, lr=0.01, reg=0.02)
-        MatrixFactorization mf = new MatrixFactorization(100, 50, 0.01, 0.02);
+        // 3) BPR-MF:专门学习"正样本 > 负样本"的排序模型
+        BprMF bpr = new BprMF(100, 50, 0.02, 0.01, 5);
         long t0 = System.currentTimeMillis();
-        mf.fit(train);
-        long mfMillis = System.currentTimeMillis() - t0;
+        bpr.fit(train);
+        long bprMillis = System.currentTimeMillis() - t0;
 
-        System.out.printf("评估指标 @K=%d%n", topN);
-        System.out.println("-----------------------------------------------------------");
-        System.out.printf("%-12s %10s %10s %10s%n", "模型", "HR@" + topN, "NDCG@" + topN, "覆盖率");
-        printRow(popular, train, test, topN);
-        printRow(itemCF, train, test, topN);
-        printRow(mf, train, test, topN);
-        System.out.println("-----------------------------------------------------------");
+        System.out.printf("评估指标 @K=%d (隐式反馈, 多个测试物品取平均)%n", topN);
+        System.out.println("---------------------------------------------------------------");
+        System.out.printf("%-14s %10s %10s %10s %10s%n", "模型", "HR@" + topN, "NDCG@" + topN, "覆盖率", "训练耗时");
+        printRow(popular, train, test, topN, -1);
+        printRow(itemCF, train, test, topN, -1);
+        printRow(bpr, train, test, topN, bprMillis);
+        System.out.println("---------------------------------------------------------------");
 
-        // MF 的评分预测质量(RMSE):和排序指标一起看,体会"准"与"靠前"的区别
-        List<double[]> pa = new ArrayList<>();
-        for (Map.Entry<Long, Rating> e : test.entrySet()) {
-            pa.add(new double[]{mf.predict(e.getKey(), e.getValue().movieId()), e.getValue().rating()});
-        }
-        System.out.printf("%nMF 评分预测 RMSE = %.4f  (训练耗时 %d ms)%n", Metrics.rmse(pa), mfMillis);
-
-        // 给一个用户看看推荐了什么,直观感受两个模型的差异
+        // 给一个用户看推荐样例
         long sampleUser = test.keySet().iterator().next();
         System.out.printf("%n用户 %d 的推荐样例(去掉了训练集已看过的电影):%n", sampleUser);
         Set<Long> seen = train.itemsOfUser(sampleUser);
-        System.out.println("  真实留出: " + train.titleOf(test.get(sampleUser).movieId()));
+        System.out.println("  真实测试: " + titles(train, test.get(sampleUser)));
         printRecs("ItemCF", itemCF, train, sampleUser, seen, topN);
-        printRecs("MF", mf, train, sampleUser, seen, topN);
+        printRecs("BPR-MF", bpr, train, sampleUser, seen, topN);
     }
 
-    private static void printRow(Recommender rec, Dataset train, Map<Long, Rating> test, int k) {
+    private static void printRow(Recommender rec, Dataset train, Map<Long, List<Rating>> test, int k, long millis) {
         Evaluation.RankResult r = Evaluation.evaluateRanking(rec, train, test, k);
-        System.out.printf("%-12s %10.4f %10.4f %9.1f%%%n",
-                rec.name(), r.hr(), r.ndcg(), r.coverage() * 100);
+        String time = millis < 0 ? "-" : millis + "ms";
+        System.out.printf("%-14s %10.4f %10.4f %9.1f%%%10s%n",
+                rec.name(), r.hr(), r.ndcg(), r.coverage() * 100, time);
+    }
+
+    private static String titles(Dataset train, List<Rating> rs) {
+        StringBuilder sb = new StringBuilder();
+        for (Rating r : rs) {
+            if (!sb.isEmpty()) {
+                sb.append("; ");
+            }
+            sb.append(train.titleOf(r.movieId()));
+        }
+        return sb.toString();
     }
 
     private static void printRecs(String label, Recommender rec, Dataset train,

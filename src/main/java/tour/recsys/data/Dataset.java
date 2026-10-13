@@ -94,6 +94,17 @@ public final class Dataset {
         return m == null ? ("<unknown " + movieId + ">") : m.title();
     }
 
+    /** 按最低评分过滤,常用于把显式评分转为隐式反馈(如 >=4.0 视为正样本)。 */
+    public Dataset filterRatings(double minRating) {
+        List<Rating> out = new ArrayList<>();
+        for (Rating r : ratings) {
+            if (r.rating() >= minRating) {
+                out.add(r);
+            }
+        }
+        return new Dataset(out, movies);
+    }
+
     /** 按物品被评分次数降序返回,热门 baseline 直接复用。 */
     public List<Long> itemsByPopularity() {
         List<Long> items = new ArrayList<>(byItem.keySet());
