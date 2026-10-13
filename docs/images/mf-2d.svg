@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="700" viewBox="0 0 900 700">
+<rect width="100%" height="100%" fill="#fafafa"/>
+<text x="450.0" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">k=2 矩阵分解:电影与用户在同一品味空间</text>
+<line x1="80.0" y1="60" x2="80.0" y2="640" stroke="#e0e0e0" stroke-width="1"/>
+<text x="80.0" y="658" text-anchor="middle" font-size="10" fill="#666">-1.66</text>
+<line x1="208.00000000000003" y1="60" x2="208.00000000000003" y2="640" stroke="#e0e0e0" stroke-width="1"/>
+<text x="208.00000000000003" y="658" text-anchor="middle" font-size="10" fill="#666">-1.06</text>
+<line x1="336.0" y1="60" x2="336.0" y2="640" stroke="#e0e0e0" stroke-width="1"/>
+<text x="336.0" y="658" text-anchor="middle" font-size="10" fill="#666">-0.46</text>
+<line x1="464.00000000000006" y1="60" x2="464.00000000000006" y2="640" stroke="#e0e0e0" stroke-width="1"/>
+<text x="464.00000000000006" y="658" text-anchor="middle" font-size="10" fill="#666">0.14</text>
+<line x1="592.0" y1="60" x2="592.0" y2="640" stroke="#e0e0e0" stroke-width="1"/>
+<text x="592.0" y="658" text-anchor="middle" font-size="10" fill="#666">0.74</text>
+<line x1="720.0" y1="60" x2="720.0" y2="640" stroke="#e0e0e0" stroke-width="1"/>
+<text x="720.0" y="658" text-anchor="middle" font-size="10" fill="#666">1.34</text>
+<line x1="80" y1="640.0" x2="720" y2="640.0" stroke="#e0e0e0" stroke-width="1"/>
+<text x="72" y="644.0" text-anchor="end" font-size="10" fill="#666">-1.18</text>
+<line x1="80" y1="524.0" x2="720" y2="524.0" stroke="#e0e0e0" stroke-width="1"/>
+<text x="72" y="528.0" text-anchor="end" font-size="10" fill="#666">-0.66</text>
+<line x1="80" y1="408.0" x2="720" y2="408.0" stroke="#e0e0e0" stroke-width="1"/>
+<text x="72" y="412.0" text-anchor="end" font-size="10" fill="#666">-0.14</text>
+<line x1="80" y1="292.0" x2="720" y2="292.0" stroke="#e0e0e0" stroke-width="1"/>
+<text x="72" y="296.0" text-anchor="end" font-size="10" fill="#666">0.38</text>
+<line x1="80" y1="176.0" x2="720" y2="176.0" stroke="#e0e0e0" stroke-width="1"/>
+<text x="72" y="180.0" text-anchor="end" font-size="10" fill="#666">0.90</text>
+<line x1="80" y1="60.0" x2="720" y2="60.0" stroke="#e0e0e0" stroke-width="1"/>
+<text x="72" y="64.0" text-anchor="end" font-size="10" fill="#666">1.42</text>
+<line x1="80" y1="377.26621524494396" x2="720" y2="377.26621524494396" stroke="#333" stroke-width="1.5"/>
+<line x1="433.7355138464716" y1="60" x2="433.7355138464716" y2="640" stroke="#333" stroke-width="1.5"/>
+<text x="730" y="381.26621524494396" font-size="12" fill="#333">dim 0</text>
+<text x="429.7355138464716" y="50" text-anchor="middle" font-size="12" fill="#333">dim 1</text>
+<circle cx="275.59114066934524" cy="343.6258265402607" r="3" fill="#333" opacity="0.5"/>
+<circle cx="311.0922804498563" cy="379.5049743185133" r="3" fill="#333" opacity="0.5"/>
+<circle cx="419.7217992314104" cy="304.896519149799" r="3" fill="#333" opacity="0.5"/>
+<circle cx="217.04810715862664" cy="403.19151288465946" r="3" fill="#333" opacity="0.5"/>
+<circle cx="397.87977494303937" cy="449.29814927995903" r="3" fill="#333" opacity="0.5"/>
+<circle cx="263.2607038185125" cy="406.34002527246093" r="3" fill="#333" opacity="0.5"/>
+<circle cx="573.0147864563295" cy="486.40544176729264" r="3" fill="#333" opacity="0.5"/>
+<circle cx="299.03121076408604" cy="516.8483347926592" r="3" fill="#333" opacity="0.5"/>
+<circle cx="407.5652441191668" cy="249.78853498460774" r="3" fill="#333" opacity="0.5"/>
+<circle cx="354.68639756229123" cy="321.92578309638054" r="3" fill="#333" opacity="0.5"/>
+<circle cx="415.5328300744915" cy="391.2723194997378" r="3" fill="#333" opacity="0.5"/>
+<circle cx="308.14141762814904" cy="301.79075581641087" r="3" fill="#333" opacity="0.5"/>
+<circle cx="415.98483714925135" cy="153.52055891317605" r="3" fill="#333" opacity="0.5"/>
+<circle cx="340.8177268053406" cy="184.89524773395652" r="3" fill="#333" opacity="0.5"/>
+<circle cx="153.84615384615384" cy="560.0415785994303" r="3" fill="#333" opacity="0.5"/>
+<circle cx="194.96640804138954" cy="470.35228122981385" r="3" fill="#333" opacity="0.5"/>
+<circle cx="562.7081279733015" cy="296.5974136591751" r="3" fill="#333" opacity="0.5"/>
+<circle cx="467.44101493585254" cy="372.11072381297" r="3" fill="#333" opacity="0.5"/>
+<circle cx="423.56834525938785" cy="459.5844178468243" r="3" fill="#333" opacity="0.5"/>
+<circle cx="392.2523295850653" cy="201.66423228153235" r="3" fill="#333" opacity="0.5"/>
+<circle cx="514.2228927177777" cy="415.8474595042346" r="3" fill="#333" opacity="0.5"/>
+<circle cx="231.80156681144462" cy="444.5432075817844" r="3" fill="#333" opacity="0.5"/>
+<circle cx="330.3901628382322" cy="304.68811750953444" r="3" fill="#333" opacity="0.5"/>
+<circle cx="385.139626575482" cy="300.1315581419962" r="3" fill="#333" opacity="0.5"/>
+<circle cx="493.1537236262313" cy="393.8791212136463" r="3" fill="#333" opacity="0.5"/>
+<circle cx="351.99016254451305" cy="400.7848747119881" r="3" fill="#333" opacity="0.5"/>
+<circle cx="458.4931546581872" cy="316.6743289433019" r="3" fill="#333" opacity="0.5"/>
+<circle cx="385.65999010767246" cy="126.92307692307702" r="3" fill="#333" opacity="0.5"/>
+<circle cx="646.1538461538462" cy="139.5545318968945" r="3" fill="#333" opacity="0.5"/>
+<circle cx="418.19082819889445" cy="450.9856236726574" r="3" fill="#333" opacity="0.5"/>
+<circle cx="349.18754778985846" cy="464.42040462732416" r="6" fill="#e41a1c" stroke="#fff" stroke-width="1.5"/>
+<circle cx="332.62541899621283" cy="420.25261597072586" r="6" fill="#e41a1c" stroke="#fff" stroke-width="1.5"/>
+<circle cx="423.3733157417812" cy="453.2914007950725" r="6" fill="#e41a1c" stroke="#fff" stroke-width="1.5"/>
+<circle cx="474.5596991354611" cy="326.04193814293217" r="6" fill="#377eb8" stroke="#fff" stroke-width="1.5"/>
+<circle cx="244.62865604829648" cy="324.0601186984925" r="6" fill="#377eb8" stroke="#fff" stroke-width="1.5"/>
+<circle cx="293.8344110879247" cy="274.8060831720168" r="6" fill="#377eb8" stroke="#fff" stroke-width="1.5"/>
+<circle cx="411.9714586423573" cy="213.38259417124175" r="6" fill="#4daf4a" stroke="#fff" stroke-width="1.5"/>
+<circle cx="309.88108946975785" cy="298.85821521392626" r="6" fill="#4daf4a" stroke="#fff" stroke-width="1.5"/>
+<circle cx="363.2247599371615" cy="337.2660140909882" r="6" fill="#4daf4a" stroke="#fff" stroke-width="1.5"/>
+<circle cx="535.5112297009608" cy="307.42160782740723" r="6" fill="#984ea3" stroke="#fff" stroke-width="1.5"/>
+<circle cx="346.2631730954057" cy="573.0769230769231" r="6" fill="#984ea3" stroke="#fff" stroke-width="1.5"/>
+<circle cx="514.9468303247536" cy="476.78512331370894" r="6" fill="#984ea3" stroke="#fff" stroke-width="1.5"/>
+<circle cx="332.7322259609481" cy="399.6595949150891" r="6" fill="#ff7f00" stroke="#fff" stroke-width="1.5"/>
+<circle cx="396.97020683135344" cy="292.92210823626027" r="6" fill="#ff7f00" stroke="#fff" stroke-width="1.5"/>
+<circle cx="414.435068090942" cy="413.0191197218824" r="6" fill="#ff7f00" stroke="#fff" stroke-width="1.5"/>
+<circle cx="488.1030358778279" cy="332.3821572755985" r="6" fill="#f781bf" stroke="#fff" stroke-width="1.5"/>
+<circle cx="348.8696902628062" cy="274.9588219810141" r="6" fill="#f781bf" stroke="#fff" stroke-width="1.5"/>
+<circle cx="349.2714980641404" cy="386.65453101780565" r="6" fill="#f781bf" stroke="#fff" stroke-width="1.5"/>
+<text x="349.18754778985846" y="452.42040462732416" text-anchor="middle" font-size="10" fill="#e41a1c" font-weight="bold">Matrix, The (1999)</text>
+<text x="332.62541899621283" y="408.25261597072586" text-anchor="middle" font-size="10" fill="#e41a1c" font-weight="bold">Star Wars: Episode ...</text>
+<text x="423.3733157417812" y="441.2914007950725" text-anchor="middle" font-size="10" fill="#e41a1c" font-weight="bold">Jurassic Park (1993)</text>
+<text x="474.5596991354611" y="314.04193814293217" text-anchor="middle" font-size="10" fill="#377eb8" font-weight="bold">Forrest Gump (1994)</text>
+<text x="244.62865604829648" y="312.0601186984925" text-anchor="middle" font-size="10" fill="#377eb8" font-weight="bold">Pulp Fiction (1994)</text>
+<text x="293.8344110879247" y="262.8060831720168" text-anchor="middle" font-size="10" fill="#377eb8" font-weight="bold">Fargo (1996)</text>
+<text x="411.9714586423573" y="201.38259417124175" text-anchor="middle" font-size="10" fill="#4daf4a" font-weight="bold">Schindler's List (1...</text>
+<text x="309.88108946975785" y="286.85821521392626" text-anchor="middle" font-size="10" fill="#4daf4a" font-weight="bold">American Beauty (1999)</text>
+<text x="363.2247599371615" y="325.2660140909882" text-anchor="middle" font-size="10" fill="#4daf4a" font-weight="bold">Sixth Sense, The (1...</text>
+<text x="535.5112297009608" y="295.42160782740723" text-anchor="middle" font-size="10" fill="#984ea3" font-weight="bold">Adjustment Bureau, ...</text>
+<text x="346.2631730954057" y="561.0769230769231" text-anchor="middle" font-size="10" fill="#984ea3" font-weight="bold">Meet Joe Black (1998)</text>
+<text x="514.9468303247536" y="464.78512331370894" text-anchor="middle" font-size="10" fill="#984ea3" font-weight="bold">Life Less Ordinary,...</text>
+<text x="332.7322259609481" y="387.6595949150891" text-anchor="middle" font-size="10" fill="#ff7f00" font-weight="bold">Alien (1979)</text>
+<text x="396.97020683135344" y="280.92210823626027" text-anchor="middle" font-size="10" fill="#ff7f00" font-weight="bold">Shining, The (1980)</text>
+<text x="414.435068090942" y="401.0191197218824" text-anchor="middle" font-size="10" fill="#ff7f00" font-weight="bold">Signs (2002)</text>
+<text x="488.1030358778279" y="320.3821572755985" text-anchor="middle" font-size="10" fill="#f781bf" font-weight="bold">Beauty and the Beas...</text>
+<text x="348.8696902628062" y="262.9588219810141" text-anchor="middle" font-size="10" fill="#f781bf" font-weight="bold">Nightmare Before Ch...</text>
+<text x="349.2714980641404" y="374.65453101780565" text-anchor="middle" font-size="10" fill="#f781bf" font-weight="bold">Chicken Run (2000)</text>
+<text x="740" y="80" font-size="13" font-weight="bold" fill="#222">电影类型</text>
+<circle cx="746" cy="124" r="6" fill="#e41a1c"/>
+<text x="760" y="128" font-size="12" fill="#333">Action</text>
+<circle cx="746" cy="146" r="6" fill="#377eb8"/>
+<text x="760" y="150" font-size="12" fill="#333">Comedy</text>
+<circle cx="746" cy="168" r="6" fill="#4daf4a"/>
+<text x="760" y="172" font-size="12" fill="#333">Drama</text>
+<circle cx="746" cy="190" r="6" fill="#984ea3"/>
+<text x="760" y="194" font-size="12" fill="#333">Romance</text>
+<circle cx="746" cy="212" r="6" fill="#ff7f00"/>
+<text x="760" y="216" font-size="12" fill="#333">Horror</text>
+<circle cx="746" cy="234" r="6" fill="#f781bf"/>
+<text x="760" y="238" font-size="12" fill="#333">Animation</text>
+<text x="740" y="278" font-size="12" fill="#555">灰点 = 用户</text>
+</svg>
