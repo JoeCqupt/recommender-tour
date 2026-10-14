@@ -21,7 +21,7 @@ import java.util.Set;
  *
  * <p>这是解决阶段一 MF "评分预测准、但 Top-N 排序弱"的关键一步。
  */
-public final class BprMF implements Recommender {
+public final class BprMF implements Recommender, Ranker {
 
     private final int k;
     private final int epochs;
@@ -164,6 +164,47 @@ public final class BprMF implements Recommender {
             s += a[f] * b[f];
         }
         return s;
+    }
+
+    /** 精排打分:给单个 (用户, 物品) 算偏好分。未见过用户/物品返回负无穷,排序时自然垫底。 */
+    @Override
+    public double score(long userId, long movieId) {
+        Integer u = userIdx.get(userId);
+        Integer i = itemIdx.get(movieId);
+        if (u == null || i == null) {
+            return Double.NEGATIVE_INFINITY;
+        }
+        return bI[i] + dot(p[u], q[i]);
+    }
+
+    public int dim() {
+        return k;
+    }
+
+    public int itemCount() {
+        return itemIds.length;
+    }
+
+    /** 物品 id 数组(按下标对齐 itemVector / itemBias)。用于导出向量。 */
+    public long[] itemIds() {
+        return itemIds.clone();
+    }
+
+    public long[] userIds() {
+        return userIds.clone();
+    }
+
+    public double[] itemVector(int idx) {
+        return q[idx];
+    }
+
+    public double itemBias(int idx) {
+        return bI[idx];
+    }
+
+    public double[] userVector(long userId) {
+        Integer u = userIdx.get(userId);
+        return u == null ? null : p[u];
     }
 
     @Override

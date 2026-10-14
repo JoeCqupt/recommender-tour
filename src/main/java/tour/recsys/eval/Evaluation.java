@@ -3,6 +3,7 @@ package tour.recsys.eval;
 import tour.recsys.data.Dataset;
 import tour.recsys.data.Rating;
 import tour.recsys.model.Recommender;
+import tour.recsys.recall.Recall;
 
 import java.util.HashSet;
 import java.util.List;
@@ -43,5 +44,40 @@ public final class Evaluation {
         }
         double cov = train.itemCount() == 0 ? 0 : (double) recommended.size() / train.itemCount();
         return new RankResult(hr / n, ndcg / n, cov, n, users);
+    }
+
+    /** 召回评估结果:召回率 = 真实测试物品落在候选集里的比例;avgCandidates = 平均候选数。 */
+    public record RecallResult(double rate, double avgCandidates) {
+    }
+
+    /**
+     * 评估召回层:真实测试物品有多大概率出现在召回候选里。
+     *
+     * <p>这是"召回率天花板"——精排只能在候选集里排序,召回没捞到的东西,精排永远排不出来。
+     * 所以召回率必须显著高于最终的 HR@K,否则瓶颈在召回而不是排序。
+     */
+    public static RecallResult evaluateRecall(Recall recall, Dataset train,
+                                              Map<Long, List<Rating>> testByUser, int n) {
+        int total = 0;
+        int hit = 0;
+        long candSum = 0;
+        int users = 0;
+        for (Map.Entry<Long, List<Rating>> e : testByUser.entrySet()) {
+            long user = e.getKey();
+            users++;
+            Set<Long> exclude = train.itemsOfUser(user);
+            List<Long> cands = recall.recall(user, n, exclude);
+            Set<Long> candSet = new HashSet<>(cands);
+            candSum += cands.size();
+            for (Rating r : e.getValue()) {
+                total++;
+                if (candSet.contains(r.movieId())) {
+                    hit++;
+                }
+            }
+        }
+        double rate = total == 0 ? 0 : (double) hit / total;
+        double avg = users == 0 ? 0 : (double) candSum / users;
+        return new RecallResult(rate, avg);
     }
 }
