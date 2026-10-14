@@ -3,7 +3,7 @@
 > 第 3 部说"轴是模型自己猜出来的,没有人类能看懂的名字"。
 > 这个附录就带你把那些轴**画出来**,并回答手写 MF 时最容易卡住的六个问题。
 
-**依赖**:读完 [第 3 部](part-03-mf.md)。
+**依赖**:读完 [第 3 部](../part-03-mf.md)。
 **源码**:`src/main/java/tour/recsys/demo/MfVisualizer.java`、`scripts/plot_mf_2d.py`。
 
 ---
@@ -261,4 +261,4 @@ p_new = (0.2, 1.0)        夹角更小, p_new·q = 1.0
 
 ---
 
-**返回**:[第 3 部 矩阵分解 MF](part-03-mf.md) · [全书目录](index.md)。
+**返回**:[第 3 部 矩阵分解 MF](../part-03-mf.md) · [全书目录](../index.md)。

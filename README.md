@@ -1,12 +1,12 @@
-# recommender-tour · 阶段三
+# recommender-tour · 阶段四
 
 从零手写推荐算法,不含任何第三方依赖(mvn + JDK 17)。
 
-**阶段三目标**:把阶段二那个"扫全库才打得动分"的 BPR-MF,改造成能上线的 **召回 + 精排两级架构**;顺便搞清两件容易被忽略的事——**召回率是精排的天花板**、**两级不一定比单级好**。
+**阶段四目标**:给第 6 部的两级架构换上"真正不一样、且更强"的精排——引入**特征交叉**做 CTR 估计。我们**手写一个 FM(因子分解机)**,用它给召回候选重新排序,第一次让两级架构在**效果和性能上同时赢过单级**;再往上一层,读懂工业界主流的深度模型(Wide&Deep / DeepFM / DIN)。
 
 > 📖 **《推荐系统入门:从一行代码到一个能上线的系统》** —— 全书目录:[`docs/book/index.md`](docs/book/index.md)
 >
-> 一本按"数学 → 初-中-高级算法 → 系统搭建"组织的路线图式教程,共 7 部 + 4 附录。建议从 [序言](docs/book/part-00-preface.md) 开始按顺序读。
+> 一本按"数学 → 初-中-高级算法 → 系统搭建"组织的路线图式教程,共 8 部 + 4 附录。建议从 [序言](docs/book/part-00-preface.md) 开始按顺序读。
 >
 > | 部 | 章节 | 技术象限 |
 > |---|---|---|
@@ -16,7 +16,8 @@
 > | 4 | [隐式反馈与排序学习:BPR-MF](docs/book/part-04-bpr.md) | 🔵🟣 |
 > | 5 | [评估:怎么判断推荐好坏](docs/book/part-05-evaluation.md) | ⚙️ |
 > | 6 | [召回 + 精排:两级架构](docs/book/part-06-two-stage.md) | ⚙️ |
-> | 7 | [进阶路线图](docs/book/part-07-roadmap.md) | 🟠 |
+> | 7 | [CTR 估计:手写 FM 与深度模型](docs/book/part-07-ctr.md) | 🔵🟣🟠 |
+> | 8 | [进阶路线图](docs/book/part-08-roadmap.md) | 🟠 |
 > | 附录 | [A 可视化](docs/book/appendix/A-mf-visualization.md) · [B 踩坑](docs/book/appendix/B-pitfalls.md) · [C 自测](docs/book/appendix/C-self-test.md) · [D 参考](docs/book/appendix/D-references.md) |  |
 >
 > 🧮 一看到公式就发怵?从 [第 1 部](docs/book/part-01-math.md) 读起 —— 只讲"够用"的那点数学(向量/点积/Σ/损失/梯度/sigmoid),每个符号配人话和代码行,20 分钟读完。
@@ -30,6 +31,7 @@
 mvn -q compile
 java -cp target/classes tour.recsys.Main data/ml-latest-small 10        # 阶段二:单级对比
 java -cp target/classes tour.recsys.Stage3Main data/ml-latest-small 10  # 阶段三:两级架构实验
+java -cp target/classes tour.recsys.Stage4Main data/ml-latest-small 10  # 阶段四:FM 精排 vs BPR 精排
 ```
 
 ## 数据集
@@ -45,13 +47,14 @@ MovieLens `ml-latest-small`:610 用户 / 9724 物品 / 100836 条评分(0.5~5.0)
 src/main/java/tour/recsys/
   data/    Rating / Movie / CsvLoader / Dataset / TrainTestSplitter
   model/   Recommender(接口) / PopularRecommender / ItemCF / MatrixFactorization / BprMF
-           Ranker(精排接口)
+           Ranker(精排接口) / FmRanker(阶段四:手写 FM)
   recall/  Recall(接口) / PopularRecall / RecommenderRecall / VectorRecall / MultiRecall
            TwoStageRecommender(两级主干)
   serve/   EmbeddingStore(训练产物 → 线上形态)
   eval/    Metrics(HR@K, NDCG@K, RMSE) / Evaluation
   Main.java       串起单级全流程(阶段二)
   Stage3Main.java 两级架构实验(阶段三)
+  Stage4Main.java FM 精排实验(阶段四)
 ```
 
 ## 模型 / 组件
@@ -62,10 +65,11 @@ src/main/java/tour/recsys/
 | 🟢 统计/规则 | `ItemCF` | Top-N 排序 | 两个物品被同一批用户喜欢就相似;用户历史物品的相似物品相似度累加 |
 | 🔵 机器学习 · 🟣 神经网络 | `MatrixFactorization` | 评分预测(阶段一) | `r_hat = mu + b_u + b_i + p_u·q_i`,SGD 训练(无隐藏层的最小神经网络) |
 | 🔵 机器学习 · 🟣 神经网络 | `BprMF` | Top-N 排序(阶段二) | 对正样本(i)和负样本(j)学 `x_ui > x_uj`,SGD 训练(sigmoid 输出层) |
+| 🟣 神经网络 | `FmRanker` | CTR 精排(阶段四) | FM:`ŷ = w0 + Σwᵢxᵢ + Σ⟨vᵢ,vⱼ⟩xᵢxⱼ`,把 用户×物品×品类 铺成稀疏特征,log loss + 负采样 SGD |
 | ⚙️ 工程/系统 | `VectorRecall` | 召回(阶段三) | 用 BPR 的用户向量 × 物品向量做近似检索,小顶堆取 Top-N |
-| ⚙️ 工程/系统 | `TwoStageRecommender` | 两级主干(阶段三) | 召回几百个候选 → 用 `Ranker` 精排 → Top-K |
+| ⚙️ 工程/系统 | `TwoStageRecommender` | 两级主干 | 召回几百个候选 → 用 `Ranker` 精排 → Top-K |
 
-> 象限图例见 [`docs/学习地图.md`](docs/学习地图.md) §1.1。一句话:**阶段 1–3 你已经用上了 🔵 机器学习;🟠 深度学习从阶段四开始。**
+> 象限图例见 [第 1 部](docs/book/part-01-math.md) §"技术象限"。一句话:**阶段 1–3 你已经用上了 🔵 机器学习;🟣 在 FM 达到顶点;🟠 深度学习从第 7 部 §6 的深度模型开始。**
 
 **切分**:time-split 0.2 —— 每用户按时间排序,前 80% 训练,后 20% 测试(交互数 < 5 剔除)。
 **评估**:去掉训练集已见物品后取 Top-K,和留出的真实物品比对;测试集每用户多条,指标取平均。
@@ -92,24 +96,45 @@ BPR-MF(k=100)(单级:扫全库)           0.0438    0.0205    15.3%      587ms
 两级(VectorRecall→200→精排)           0.0438    0.0205    15.3%      225ms
 ```
 
-## 阶段三最重要的三个结论
+## 阶段四实验结果(Stage4Main, K=10)
 
-### 1. 两级架构首先解决的是"算力/延迟",不是"效果"
+同一路向量召回(BPR 向量,候选 200),换不同精排;FM 用 `k=32`、负采样 10、60 轮。
 
-真实系统不会拿模型扫全库。召先把 1 亿物品缩到几百个候选,精排只给这几百个打分。本数据集物品才 6千+,耗时差距不明显;上亿时这就是能不能上线的分水岭。
+| 精排器 | HR@10 | NDCG@10 | 覆盖率 |
+|---|---|---|---|
+| 热门分(弱精排) | 0.0315 | 0.0155 | 2.6% |
+| BPR 向量分(=召回) | 0.0438 | 0.0205 | 15.3% |
+| **FM(品类交叉)** | **0.0442** | **0.0218** | 7.2% |
 
-### 2. 召回率是精排的天花板
+**特征消融**(同 FM,只开关品类特征):
 
-召回没捞到的物品,再强的精排也排不出来。表1 里多路召回(45.2%)> 任何单路(最高 36.9%),这正是"多路并行 + 合并去重"存在的理由——不同的召回互相补盲。
+| FM 变体 | HR@10 | NDCG@10 |
+|---|---|---|
+| 仅 `用户 × 物品` | 0.0418 | 0.0201 |
+| 加 `品类` 交叉 | **0.0442** | **0.0218** |
 
-### 3. "两级一定比单级好"是错觉 —— 精排必须比召回强
+**单级 vs 两级总账**:
 
-`Stage3Main` 里做了两组对照:
+```
+方案                                   HR@10   NDCG@10      覆盖率
+BPR 单级(扫全库打分)                   0.0438    0.0205    15.3%
+向量召回 → BPR 精排                     0.0438    0.0205    15.3%
+多路召回 → FM 精排                      0.0446    0.0219     7.0%
+```
 
-- **精排 = 召回**(都用 BPR 向量):候选集从 50 开到 1000,召回率从 14.9% 涨到 69.2%,**HR@10 却纹丝不动**(恒为 0.0438)。因为精排只是把召回的顺序重算一遍,两级 == 单级,只是白花时间。
-- **精排 ≠ 召回**(换成"热门分"这个弱精排):候选集越大,HR 反而越低,`n=1000` 时跌回 Popular 基线的 0.0295——弱精排配大候选池会退化成"纯推热门"。
+## 阶段四最重要的三个结论
 
-**教训**:召回与精排是接力棒,得匹配。精排比召回强,两级才有意义;否则不如直接用单级。这也是阶段四要"把精排换成真正不同的模型(带交叉特征的 CTR)"的原因。
+### 1. 精排必须"和召回不一样,且更强",两级才有收益
+
+FM 引入了召回没有的「用户 × 物品 × 品类」交叉信号,HR@10 和 NDCG@10 都超过了 BPR 精排,**并且更快**(只给 200 个候选打分)。两级架构第一次同时赢下效果和性能。
+
+### 2. 特征不是越多越好,每个特征都要消融验证
+
+关掉品类特征,FM 退化成"带线性偏置的 MF",效果和 BPR 差不多;打开后效果提升。但——**品类交叉在有些配置下反而拉低效果**(粗粒度先验,数据量小时易过拟合)。特征工程靠的是消融实验,不是直觉。
+
+### 3. 效果与覆盖率是要权衡的一对指标
+
+FM 的 HR/NDCG 比 BPR 高,但**覆盖率更低**(7.2% vs 15.3%)——它更偏好大众口味,推的东西更集中。只看单一指标会骗人。
 
 ## 阶段标签
 
@@ -119,21 +144,24 @@ BPR-MF(k=100)(单级:扫全库)           0.0438    0.0205    15.3%      587ms
 git checkout stage-1   # 阶段一:ItemCF + 评分 MF
 git checkout stage-2   # 阶段二:BPR-MF 隐式反馈排序
 git checkout stage-3   # 阶段三:召回 + 精排两级架构
-# 当前工作区即 stage-3 之后的"成书"整理版
+git checkout stage-4   # 阶段四:手写 FM,CTR 精排
+# 当前工作区即 stage-4 之后的最新状态
 ```
 
 > 📖 `stage-3` 之后新增标签 `stage-3-book`:把分散的文档重组成一本书([`docs/book/`](docs/book/index.md))。原 `stage-1/2/3` 标签保持不变,旧文档内容可通过它们随时找回。
 
-## 下一步(阶段四)
+## 下一步(阶段五)
 
-1. **精排上真正的排序模型**:GBDT / DeepFM 等 CTR 模型,输入用户/物品/上下文的交叉特征,不再只是两个向量点积。
-2. **特征体系**:用户画像、物品属性、交叉特征(用户×类别)、上下文(时段、设备)。
-3. **语言换到 Python**:PyTorch / LightGBM / Faiss 是这一阶段的标配。前三个阶段用 Java 是为了看清齿轮怎么转,阶段四起用 Python 是为了站上巨人的肩膀。
+1. **工程与服务**:把离线训好的召回向量 + FM 精排,包成一个能上线的迷你推荐服务(导出 → 特征拼接 → 召回 → 排序 → Top-K)。
+2. **特征存储 / 实时特征**:线上特征必须和训练一致,这是最易翻车的地方。
+3. **探索与利用 / A/B 实验**:离线指标 ≠ 线上指标。
+4. **深度模型**:DeepFM / DIN 这类带隐藏层与注意力的模型,换到 Python(PyTorch)实践。
 
 ## 已埋的扩展点
 
 - `Recommender` 接口是统一出口,新算法只要实现 `recommend(userId, topN, exclude)` 就能直接进评估表。
-- `Recall` / `Ranker` 两个接口把"召回"和"精排"解耦,任何一路召回、任何精排模型都能自由组合。
+- `Recall` / `Ranker` 两个接口把"召回"和"精排"解耦,任何一路召回、任何精排模型(如 `FmRanker`)都能自由组合。
+- `FmRanker` 的特征布局(用户段 / 物品段 / 品类段)是加新特征域的模板——再加"时段""设备"只需扩一段。
 - `RecommenderRecall` 适配器让阶段一/二的单级模型零改动地接入多路召回。
 - `EmbeddingStore` 演示了"离线训练 → 导出 → 在线 serving"的最小闭环。
 - `TrainTestSplitter` 同时提供 `leaveOneOut` 与 `timeSplit`;`Evaluation` 与模型解耦。

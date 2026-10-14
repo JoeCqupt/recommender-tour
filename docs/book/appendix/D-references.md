@@ -9,21 +9,23 @@
 3. **Sarwar et al. "Item-Based Collaborative Filtering Recommendation Algorithms", WWW 2001.** —— ItemCF 的学术定义与相似度度量对比。
 4. **Rendle et al. "BPR: Bayesian Personalized Ranking from Implicit Feedback", UAI 2009.** —— 第 4 部的入口。成对损失,解决"评分准 ≠ 排得前"的目标错配。
    - https://arxiv.org/abs/1205.2618
+5. **Rendle. "Factorization Machines", ICDM 2010.** —— 第 7 部 FM 的原始出处。用隐向量内积表示二阶交叉,把参数量从 O(n²) 降到 O(n·k)。
+   - https://ieeexplore.ieee.org/document/5694074
 
-### 进阶(第 7 部路线图里的)
+### 进阶(第 7 部 §6 / 第 8 部路线图里的)
 
-5. He et al. "Neural Collaborative Filtering", WWW 2017. —— 用神经网络做协同过滤。
-6. Covington et al. "Deep Neural Networks for YouTube Recommendations", RecSys 2016. —— 工业级召回的两塔结构。
-7. Zhou et al. "Deep Interest Network for Click-Through Rate Prediction", KDD 2018. —— DIN,用户行为序列建模。
-8. Kang & McAuley. "Self-Attentive Sequential Recommendation", ICDM 2018. —— SASRec,序列推荐。
-9. Cheng et al. "Wide & Deep Learning for Recommender Systems", 2016; Guo et al. "DeepFM", 2017. —— 特征交叉与深度模型。
+6. He et al. "Neural Collaborative Filtering", WWW 2017. —— 用神经网络做协同过滤。
+7. Covington et al. "Deep Neural Networks for YouTube Recommendations", RecSys 2016. —— 工业级召回的两塔结构。
+8. Zhou et al. "Deep Interest Network for Click-Through Rate Prediction", KDD 2018. —— DIN,第 7 部 §6.3 的用户行为序列建模。
+9. Kang & McAuley. "Self-Attentive Sequential Recommendation", ICDM 2018. —— SASRec,序列推荐。
+10. Cheng et al. "Wide & Deep Learning for Recommender Systems", 2016; Guo et al. "DeepFM", 2017. —— 第 7 部 §6 的特征交叉与深度模型。
 
 ---
 
 ## 书(中文,建立体系)
 
 10. **项亮.《推荐系统实践》** —— 薄,入门最快,先建立词汇和直觉。
-11. **王喆.《深度学习推荐系统》** —— 精排圣经,读完第 4 部之后反复翻。
+11. **王喆.《深度学习推荐系统》** —— 精排圣经,读完第 4 部之后反复翻(第 7 部的深度模型尤其对口)。
 
 ---
 
@@ -34,4 +36,4 @@
 
 ---
 
-**返回**:[全书目录](index.md)。
+**返回**:[全书目录](../index.md)。
