@@ -4,9 +4,22 @@
 
 **阶段三目标**:把阶段二那个"扫全库才打得动分"的 BPR-MF,改造成能上线的 **召回 + 精排两级架构**;顺便搞清两件容易被忽略的事——**召回率是精排的天花板**、**两级不一定比单级好**。
 
-> 📘 **算法详解文档**:[`docs/算法实现详解.md`](docs/算法实现详解.md) —— ItemCF / 评分 MF / BPR-MF / 两级架构的设计思想、逐段代码走查、评估指标、踩坑复盘与参考资料。  
-> 🎨 **MF 可视化教程**:[`docs/MF完全入门教程.md`](docs/MF完全入门教程.md) —— 从"填表格"到"品味空间",含 k=2 散点图和一次真实预测的五步拆解。  
-> 🗺️ **学习地图**:[`docs/学习地图.md`](docs/学习地图.md) —— 从入门到精通的六个阶段、三条主线,以及为什么前三个阶段用 Java、后面换 Python。
+> 📖 **《推荐系统入门:从一行代码到一个能上线的系统》** —— 全书目录:[`docs/book/index.md`](docs/book/index.md)
+>
+> 一本按"数学 → 初-中-高级算法 → 系统搭建"组织的路线图式教程,共 7 部 + 4 附录。建议从 [序言](docs/book/part-00-preface.md) 开始按顺序读。
+>
+> | 部 | 章节 | 技术象限 |
+> |---|---|---|
+> | 1 | [数学够用就好](docs/book/part-01-math.md) | 🔵 |
+> | 2 | [推荐第一课:ItemCF](docs/book/part-02-itemcf.md) | 🟢 |
+> | 3 | [从统计到学习:矩阵分解 MF](docs/book/part-03-mf.md) | 🔵🟣 |
+> | 4 | [隐式反馈与排序学习:BPR-MF](docs/book/part-04-bpr.md) | 🔵🟣 |
+> | 5 | [评估:怎么判断推荐好坏](docs/book/part-05-evaluation.md) | ⚙️ |
+> | 6 | [召回 + 精排:两级架构](docs/book/part-06-two-stage.md) | ⚙️ |
+> | 7 | [进阶路线图](docs/book/part-07-roadmap.md) | 🟠 |
+> | 附录 | [A 可视化](docs/book/appendix/A-mf-visualization.md) · [B 踩坑](docs/book/appendix/B-pitfalls.md) · [C 自测](docs/book/appendix/C-self-test.md) · [D 参考](docs/book/appendix/D-references.md) |  |
+>
+> 🧮 一看到公式就发怵?从 [第 1 部](docs/book/part-01-math.md) 读起 —— 只讲"够用"的那点数学(向量/点积/Σ/损失/梯度/sigmoid),每个符号配人话和代码行,20 分钟读完。
 
 ## 运行
 
@@ -43,14 +56,16 @@ src/main/java/tour/recsys/
 
 ## 模型 / 组件
 
-| 组件 | 做什么 | 怎么打分 |
-|---|---|---|
-| `PopularRecommender` | 兜底 baseline | 按物品被评分次数排序,个性化算法必须超过它 |
-| `ItemCF` | Top-N 排序 | 两个物品被同一批用户喜欢就相似;用户历史物品的相似物品相似度累加 |
-| `MatrixFactorization` | 评分预测(阶段一) | `r_hat = mu + b_u + b_i + p_u·q_i`,SGD 训练 |
-| `BprMF` | Top-N 排序(阶段二) | 对正样本(i)和负样本(j)学 `x_ui > x_uj`,SGD 训练 |
-| `VectorRecall` | 召回(阶段三) | 用 BPR 的用户向量 × 物品向量做近似检索,小顶堆取 Top-N |
-| `TwoStageRecommender` | 两级主干(阶段三) | 召回几百个候选 → 用 `Ranker` 精排 → Top-K |
+| 象限 | 组件 | 做什么 | 怎么打分 |
+|---|---|---|---|
+| 🟢 统计/规则 | `PopularRecommender` | 兜底 baseline | 按物品被评分次数排序,个性化算法必须超过它 |
+| 🟢 统计/规则 | `ItemCF` | Top-N 排序 | 两个物品被同一批用户喜欢就相似;用户历史物品的相似物品相似度累加 |
+| 🔵 机器学习 · 🟣 神经网络 | `MatrixFactorization` | 评分预测(阶段一) | `r_hat = mu + b_u + b_i + p_u·q_i`,SGD 训练(无隐藏层的最小神经网络) |
+| 🔵 机器学习 · 🟣 神经网络 | `BprMF` | Top-N 排序(阶段二) | 对正样本(i)和负样本(j)学 `x_ui > x_uj`,SGD 训练(sigmoid 输出层) |
+| ⚙️ 工程/系统 | `VectorRecall` | 召回(阶段三) | 用 BPR 的用户向量 × 物品向量做近似检索,小顶堆取 Top-N |
+| ⚙️ 工程/系统 | `TwoStageRecommender` | 两级主干(阶段三) | 召回几百个候选 → 用 `Ranker` 精排 → Top-K |
+
+> 象限图例见 [`docs/学习地图.md`](docs/学习地图.md) §1.1。一句话:**阶段 1–3 你已经用上了 🔵 机器学习;🟠 深度学习从阶段四开始。**
 
 **切分**:time-split 0.2 —— 每用户按时间排序,前 80% 训练,后 20% 测试(交互数 < 5 剔除)。
 **评估**:去掉训练集已见物品后取 Top-K,和留出的真实物品比对;测试集每用户多条,指标取平均。
@@ -103,8 +118,11 @@ BPR-MF(k=100)(单级:扫全库)           0.0438    0.0205    15.3%      587ms
 ```bash
 git checkout stage-1   # 阶段一:ItemCF + 评分 MF
 git checkout stage-2   # 阶段二:BPR-MF 隐式反馈排序
-# 当前工作区即 stage-3
+git checkout stage-3   # 阶段三:召回 + 精排两级架构
+# 当前工作区即 stage-3 之后的"成书"整理版
 ```
+
+> 📖 `stage-3` 之后新增标签 `stage-3-book`:把分散的文档重组成一本书([`docs/book/`](docs/book/index.md))。原 `stage-1/2/3` 标签保持不变,旧文档内容可通过它们随时找回。
 
 ## 下一步(阶段四)
 
