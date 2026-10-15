@@ -6,7 +6,7 @@
 
 > 📖 **《推荐系统入门:从一行代码到一个能上线的系统》** —— 全书目录:[`docs/book/index.md`](docs/book/index.md)
 >
-> 一本按"数学 → 初-中-高级算法 → 系统搭建"组织的路线图式教程,共 8 部 + 4 附录。建议从 [序言](docs/book/part-00-preface.md) 开始按顺序读。
+> 一本按"数学 → 初-中-高级算法 → 系统搭建"组织的路线图式教程,共 9 部 + 5 附录。建议从 [序言](docs/book/part-00-preface.md) 开始按顺序读。
 >
 > | 部 | 章节 | 技术象限 |
 > |---|---|---|
@@ -19,7 +19,7 @@
 > | 7 | [CTR 估计:手写 FM 与深度模型](docs/book/part-07-ctr.md) | 🔵🟣🟠 |
 > | 8 | [进阶路线图](docs/book/part-08-roadmap.md) | 🟠 |
 > | 9 | [工程与服务](docs/book/part-09-engineering.md) | ⚙️ |
-> | 附录 | [A 可视化](docs/book/appendix/A-mf-visualization.md) · [B 踩坑](docs/book/appendix/B-pitfalls.md) · [C 自测](docs/book/appendix/C-self-test.md) · [D 参考](docs/book/appendix/D-references.md) |  |
+> | 附录 | [A 可视化](docs/book/appendix/A-mf-visualization.md) · [B 踩坑](docs/book/appendix/B-pitfalls.md) · [C 自测](docs/book/appendix/C-self-test.md) · [D 参考](docs/book/appendix/D-references.md) · [E 冷启动](docs/book/appendix/E-coldstart.md) |  |
 >
 > 🧮 一看到公式就发怵?从 [第 1 部](docs/book/part-01-math.md) 读起 —— 只讲"够用"的那点数学(向量/点积/Σ/损失/梯度/sigmoid),每个符号配人话和代码行,20 分钟读完。
 
