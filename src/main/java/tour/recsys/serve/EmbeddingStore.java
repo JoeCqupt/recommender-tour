@@ -2,6 +2,11 @@ package tour.recsys.serve;
 
 import tour.recsys.model.BprMF;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +26,7 @@ public final class EmbeddingStore {
     private final int dim;
     private final Map<Long, double[]> userVectors = new HashMap<>();
     private final long[] itemIds;
+    private final Map<Long, Integer> itemIndex = new HashMap<>();
     private final double[][] itemVectors;
     private final double[] itemBias;
 
@@ -29,6 +35,9 @@ public final class EmbeddingStore {
         this.itemIds = itemIds;
         this.itemVectors = itemVectors;
         this.itemBias = itemBias;
+        for (int i = 0; i < itemIds.length; i++) {
+            this.itemIndex.put(itemIds[i], i);
+        }
     }
 
     /** 从训练好的 BPR-MF 导出向量,模拟"离线训练 → 导出"这一步。 */
@@ -60,6 +69,12 @@ public final class EmbeddingStore {
         return itemIds[idx];
     }
 
+    /** 按 itemId 查下标,不存在返回 -1(供精排层用)。 */
+    public int itemIndex(long itemId) {
+        Integer idx = itemIndex.get(itemId);
+        return idx == null ? -1 : idx;
+    }
+
     public List<Long> itemIdList() {
         List<Long> out = new java.util.ArrayList<>(itemIds.length);
         for (long id : itemIds) {
@@ -80,5 +95,67 @@ public final class EmbeddingStore {
             s += userVector[f] * q[f];
         }
         return s;
+    }
+
+    /** 把向量库序列化到输出流,用于"离线训练 → 导出模型"。 */
+    public void save(OutputStream out) throws IOException {
+        DataOutputStream dos = new DataOutputStream(out);
+        dos.writeInt(0x454D5354); // magic "EMST"
+        dos.writeInt(1);          // version
+        dos.writeInt(dim);
+        dos.writeInt(userVectors.size());
+        for (Map.Entry<Long, double[]> e : userVectors.entrySet()) {
+            dos.writeLong(e.getKey());
+            for (double v : e.getValue()) {
+                dos.writeDouble(v);
+            }
+        }
+        dos.writeInt(itemIds.length);
+        for (int i = 0; i < itemIds.length; i++) {
+            dos.writeLong(itemIds[i]);
+            dos.writeDouble(itemBias[i]);
+            for (double v : itemVectors[i]) {
+                dos.writeDouble(v);
+            }
+        }
+        dos.flush();
+    }
+
+    /** 从输入流反序列化向量库,用于"在线服务加载模型"。 */
+    public static EmbeddingStore load(InputStream in) throws IOException {
+        DataInputStream dis = new DataInputStream(in);
+        int magic = dis.readInt();
+        if (magic != 0x454D5354) {
+            throw new IOException("invalid EmbeddingStore magic: " + Integer.toHexString(magic));
+        }
+        int version = dis.readInt();
+        if (version != 1) {
+            throw new IOException("unsupported EmbeddingStore version: " + version);
+        }
+        int dim = dis.readInt();
+        int nu = dis.readInt();
+        Map<Long, double[]> userVectors = new HashMap<>(nu * 2);
+        for (int i = 0; i < nu; i++) {
+            long uid = dis.readLong();
+            double[] vec = new double[dim];
+            for (int f = 0; f < dim; f++) {
+                vec[f] = dis.readDouble();
+            }
+            userVectors.put(uid, vec);
+        }
+        int ni = dis.readInt();
+        long[] itemIds = new long[ni];
+        double[] itemBias = new double[ni];
+        double[][] itemVectors = new double[ni][dim];
+        for (int i = 0; i < ni; i++) {
+            itemIds[i] = dis.readLong();
+            itemBias[i] = dis.readDouble();
+            for (int f = 0; f < dim; f++) {
+                itemVectors[i][f] = dis.readDouble();
+            }
+        }
+        EmbeddingStore store = new EmbeddingStore(dim, itemIds, itemVectors, itemBias);
+        store.userVectors.putAll(userVectors);
+        return store;
     }
 }

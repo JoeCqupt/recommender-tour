@@ -1,6 +1,7 @@
 target/
 data/ml-latest-small/
 data/mf-2d-embedding.csv
+models/
 *.class
 .idea/
 *.iml

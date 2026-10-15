@@ -18,6 +18,7 @@
 > | 6 | [召回 + 精排:两级架构](docs/book/part-06-two-stage.md) | ⚙️ |
 > | 7 | [CTR 估计:手写 FM 与深度模型](docs/book/part-07-ctr.md) | 🔵🟣🟠 |
 > | 8 | [进阶路线图](docs/book/part-08-roadmap.md) | 🟠 |
+> | 9 | [工程与服务](docs/book/part-09-engineering.md) | ⚙️ |
 > | 附录 | [A 可视化](docs/book/appendix/A-mf-visualization.md) · [B 踩坑](docs/book/appendix/B-pitfalls.md) · [C 自测](docs/book/appendix/C-self-test.md) · [D 参考](docs/book/appendix/D-references.md) |  |
 >
 > 🧮 一看到公式就发怵?从 [第 1 部](docs/book/part-01-math.md) 读起 —— 只讲"够用"的那点数学(向量/点积/Σ/损失/梯度/sigmoid),每个符号配人话和代码行,20 分钟读完。
@@ -150,12 +151,27 @@ git checkout stage-4   # 阶段四:手写 FM,CTR 精排
 
 > 📖 `stage-3` 之后新增标签 `stage-3-book`:把分散的文档重组成一本书([`docs/book/`](docs/book/index.md))。原 `stage-1/2/3` 标签保持不变,旧文档内容可通过它们随时找回。
 
-## 下一步(阶段五)
+## 阶段五已完成(工程与服务)
 
-1. **工程与服务**:把离线训好的召回向量 + FM 精排,包成一个能上线的迷你推荐服务(导出 → 特征拼接 → 召回 → 排序 → Top-K)。
-2. **特征存储 / 实时特征**:线上特征必须和训练一致,这是最易翻车的地方。
-3. **探索与利用 / A/B 实验**:离线指标 ≠ 线上指标。
-4. **深度模型**:DeepFM / DIN 这类带隐藏层与注意力的模型,换到 Python(PyTorch)实践。
+- 新增 `EmbeddingStore.save/load`、`FmRanker.saveModel/loadModel`,把训练产物导出为 `models/` 下的二进制文件。
+- 新增 `RecService` 封装召回、FM 精排、BPR 精排、热门兜底和 A/B 分流。
+- 新增 `RecServer`:用 JDK 内置 HttpServer 提供 `/recommend` 和 `/ab` HTTP 接口,零第三方依赖。
+- 新增 `Stage5Main`:训练 → 导出 → 加载 → 验证闭环。
+- 新增 [第 9 部 工程与服务](docs/book/part-09-engineering.md) 文档。
+
+启动服务:
+
+```bash
+mvn -q compile
+java -cp target/classes tour.recsys.Stage5Main data/ml-latest-small models
+java -cp target/classes tour.recsys.serve.RecServer models 8080
+curl 'http://localhost:8080/recommend?userId=1&n=10'
+```
+
+## 下一步(阶段六)
+
+1. **论文与前沿**:带着前五个阶段的手感精读经典论文(MF、ItemCF、BPR、NCF、YouTube DNN、DIN、双塔、SASRec)。
+2. **深度模型实践**:DeepFM / DIN 这类带隐藏层与注意力的模型,换到 Python(PyTorch)实现。
 
 ## 已埋的扩展点
 

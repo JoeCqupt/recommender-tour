@@ -17,7 +17,11 @@ public final class PopularRecall implements Recall {
     private final List<Long> ranked;
 
     public PopularRecall(Dataset train) {
-        this.ranked = train.itemsByPopularity();
+        this(train.itemsByPopularity());
+    }
+
+    public PopularRecall(List<Long> ranked) {
+        this.ranked = ranked;
     }
 
     @Override

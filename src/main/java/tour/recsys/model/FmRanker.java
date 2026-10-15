@@ -4,6 +4,11 @@ import tour.recsys.data.Dataset;
 import tour.recsys.data.Movie;
 import tour.recsys.data.Rating;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,6 +91,16 @@ public final class FmRanker implements Ranker {
         this.reg = reg;
         this.negSamples = negSamples;
         this.useGenreCross = useGenreCross;
+    }
+
+    /** 供 loadModel 使用的私有构造:只初始化服务所需字段,训练超参数置 0(不会再用)。 */
+    private FmRanker(int k, boolean useGenreCross) {
+        this.k = k;
+        this.useGenreCross = useGenreCross;
+        this.epochs = 0;
+        this.lr = 0.0;
+        this.reg = 0.0;
+        this.negSamples = 0;
     }
 
     public void fit(Dataset train) {
@@ -261,5 +276,121 @@ public final class FmRanker implements Ranker {
 
     public String name() {
         return "FM(k=" + k + (useGenreCross ? "" : ",无品类交叉") + ")";
+    }
+
+    /** 把训练好的 FM 模型序列化到输出流,用于"离线训练 → 导出模型"。 */
+    public void saveModel(OutputStream out) throws IOException {
+        DataOutputStream dos = new DataOutputStream(out);
+        dos.writeInt(0x464D524B); // magic "FMRK"
+        dos.writeInt(1);          // version
+        dos.writeInt(k);
+        dos.writeBoolean(useGenreCross);
+        dos.writeInt(numFeatures);
+        dos.writeInt(userOffset);
+        dos.writeInt(itemOffset);
+        dos.writeInt(genreOffset);
+        dos.writeDouble(w0);
+
+        dos.writeInt(userIds.length);
+        for (long u : userIds) {
+            dos.writeLong(u);
+        }
+        dos.writeInt(itemIds.length);
+        for (long i : itemIds) {
+            dos.writeLong(i);
+        }
+
+        dos.writeInt(genreIdx.size());
+        for (Map.Entry<String, Integer> e : genreIdx.entrySet()) {
+            dos.writeUTF(e.getKey());
+            dos.writeInt(e.getValue());
+        }
+
+        for (int f = 0; f < numFeatures; f++) {
+            dos.writeDouble(w[f]);
+        }
+        for (int f = 0; f < numFeatures; f++) {
+            for (int d = 0; d < k; d++) {
+                dos.writeDouble(v[f][d]);
+            }
+        }
+
+        dos.writeInt(itemFeatures.length);
+        for (int[] feats : itemFeatures) {
+            dos.writeInt(feats.length);
+            for (int f : feats) {
+                dos.writeInt(f);
+            }
+        }
+        dos.flush();
+    }
+
+    /** 从输入流反序列化 FM 模型,用于"在线服务加载模型"。 */
+    public static FmRanker loadModel(InputStream in) throws IOException {
+        DataInputStream dis = new DataInputStream(in);
+        int magic = dis.readInt();
+        if (magic != 0x464D524B) {
+            throw new IOException("invalid FmRanker magic: " + Integer.toHexString(magic));
+        }
+        int version = dis.readInt();
+        if (version != 1) {
+            throw new IOException("unsupported FmRanker version: " + version);
+        }
+        int k = dis.readInt();
+        boolean useGenreCross = dis.readBoolean();
+        FmRanker fm = new FmRanker(k, useGenreCross);
+
+        fm.numFeatures = dis.readInt();
+        fm.userOffset = dis.readInt();
+        fm.itemOffset = dis.readInt();
+        fm.genreOffset = dis.readInt();
+        fm.w0 = dis.readDouble();
+
+        int nu = dis.readInt();
+        fm.userIds = new long[nu];
+        fm.userIdx.clear();
+        for (int i = 0; i < nu; i++) {
+            fm.userIds[i] = dis.readLong();
+            fm.userIdx.put(fm.userIds[i], i);
+        }
+
+        int ni = dis.readInt();
+        fm.itemIds = new long[ni];
+        fm.itemIdx.clear();
+        for (int i = 0; i < ni; i++) {
+            fm.itemIds[i] = dis.readLong();
+            fm.itemIdx.put(fm.itemIds[i], i);
+        }
+
+        int ng = dis.readInt();
+        fm.genreIdx.clear();
+        for (int i = 0; i < ng; i++) {
+            String name = dis.readUTF();
+            int idx = dis.readInt();
+            fm.genreIdx.put(name, idx);
+        }
+
+        fm.w = new double[fm.numFeatures];
+        for (int f = 0; f < fm.numFeatures; f++) {
+            fm.w[f] = dis.readDouble();
+        }
+        fm.v = new double[fm.numFeatures][fm.k];
+        for (int f = 0; f < fm.numFeatures; f++) {
+            for (int d = 0; d < fm.k; d++) {
+                fm.v[f][d] = dis.readDouble();
+            }
+        }
+
+        int itemFeatLen = dis.readInt();
+        fm.itemFeatures = new int[itemFeatLen][];
+        for (int i = 0; i < itemFeatLen; i++) {
+            int len = dis.readInt();
+            int[] feats = new int[len];
+            for (int t = 0; t < len; t++) {
+                feats[t] = dis.readInt();
+            }
+            fm.itemFeatures[i] = feats;
+        }
+        return fm;
     }
 }

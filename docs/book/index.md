@@ -32,6 +32,7 @@
 第 6 部  两级架构             ← 召回 + 精排
 第 7 部  CTR 估计与 FM        ← 精排换上"特征交叉"的模型
 第 8 部  进阶路线图           ← 下一站去哪
+第 9 部  工程与服务           ← 把 FM 精排变成线上 HTTP 服务
 附录     A 可视化 / B 踩坑 / C 自测 / D 参考
 ```
 
@@ -83,6 +84,7 @@
 | 6 | [召回 + 精排:两级架构](part-06-two-stage.md) | 物品太多,先粗筛再用贵模型精排 | ⚙️ |
 | 7 | [CTR 估计:手写 FM 与深度模型](part-07-ctr.md) | 精排换上"特征交叉"的模型:手写 FM,读懂 DeepFM/DIN | 🔵🟣🟠 |
 | 8 | [进阶路线图](part-08-roadmap.md) | 系统工程、论文,下一站去哪 | 🟠 |
+| 9 | [工程与服务](part-09-engineering.md) | 把训练好的 FM 装进一个能响应 HTTP 请求的推荐服务 | ⚙️ |
 | A | [附录 A:MF 可视化教程](appendix/A-mf-visualization.md) | 亲手训出 k=2 的品味空间并画出来 | 🔵🟣 |
 | B | [附录 B:踩坑复盘](appendix/B-pitfalls.md) | 参数量纲、目标错配这些真实翻车 | — |
 | C | [附录 C:自测题](appendix/C-self-test.md) | 确认你真的读懂了 | — |
